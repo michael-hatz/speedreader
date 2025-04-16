@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>erdx</title>
+    <!-- Integrated CSS from css2.css -->
+    <style>
+        /* Contents of css2.css */
+        /* Example styles from css2.css */
+        @font-face {
+            font-family: 'Atkinson Hyperlegible';
+            font-style: normal;
+            font-weight: 400;
+            src: url('https://fonts.gstatic.com/s/atkinsonhyperlegible/v1/xyz.woff2') format('woff2');
+        }
+        body {
+            font-family: 'Atkinson Hyperlegible', sans-serif;
+        }
+        /* Add other styles from css2.css here */
+    </style>
+    <style>
+        /* Existing styles from the main page */
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background: #f4f4f4; 
+            transition: background 0.3s; 
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container { 
+            margin-top: 50px; 
+            width: 90%; 
+            max-width: 800px;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #wordDisplay { 
+            font-size: 3rem; 
+            font-family: 'Atkinson Hyperlegible', sans-serif;
+            font-weight: bold; 
+            padding: 20px; 
+            min-height: 100px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            margin: 20px 0;
+            width: 100%;
+            text-align: center;
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        .controls { 
+            margin-top: 20px; 
+            width: 100%; 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        button, input {
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+        }
+        input[type="number"] {
+            width: 120px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        textarea { 
+            width: 80%; 
+            height: 100px; 
+            margin-bottom: 10px; 
+            z-index: 0; 
+            padding: 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .dark-mode { 
+            background: #222; 
+            color: white; 
+        }
+        .dark-mode button { 
+            background-color: #444; 
+            color: white; 
+        }
+        .dark-mode textarea { 
+            background-color: #333; 
+            color: white; 
+            border: 1px solid #555; 
+        }
+        .dark-mode #wordDisplay { 
+            background-color: #333; 
+            color: white; 
+        }
+        .word-counters {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 1.2rem;
+        }
+        .word-counters div {
+            font-weight: bold;
+        }
+        /* Mobile optimization */
+        @media (max-width: 600px) {
+            .container { 
+                margin-top: 20px; 
+                width: 95%; 
+            }
+            button, input { 
+                font-size: 0.9rem; 
+                padding: 8px 16px; 
+            }
+            textarea { 
+                width: 100%; 
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="wordDisplay" aria-live="polite"></div>
+
+        <textarea id="textInput" placeholder="Paste your text here...">
+</textarea>
+
+        <div class="controls">
+            
+            <button onclick="startReading()">Start</button>
+            <button id="pauseButton" onclick="togglePause()">Pause</button>
+            <button onclick="goBackSentence()">&lt;&lt;</button>
+            <button onclick="resetReading()">Reset</button>
+            <button onclick="toggleDarkMode()">Dark Mode</button>
+            <button onclick="deleteText()">Save</button>
+                        <!-- Add the fullscreen button to the controls section -->
+                        <button id="fullscreenButton" onclick="toggleFullscreen()" title="Fullscreen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-maximize">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+                                <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
+                                <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
+                                <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+                            </svg>
+                        </button>
+            <label>Speed (WPM): <input type="number" id="speedInput" value="300" min="50" max="1000"></label>
+            <input type="file" id="fileInput" accept=".txt,.docx" onchange="handleFileUpload(event)">
+            <button onclick="startReadingForFiveMinutes()">Read for 5 Minutes</button>
+            <label>Custom Minutes: <input type="number" id="customMinutesInput" value="5" min="1" max="60"></label>
+            <button onclick="startReadingForCustomMinutes()">Read for Custom Minutes</button>
+            <button onclick="saveRemainingText()">Save Remaining Text as .txt</button>
+        </div>
+
+        <div class="word-counters">
+            <div>Total Words Read: <span id="totalWordsRead">664</span></div>
+            <div>Current Session: <span id="currentSessionWords">0</span></div>
+            <div>Words Remaining: <span id="wordsRemaining">0</span></div>
+        </div>
+    </div>
+
+    <script>
+        let words = [], index = 0, interval = null, isPaused = false;
+        let totalWordsRead = 0, sessionWordsRead = 0;
+
+        // Load the total words read from the cookie when the page loads
+        function loadWordCounts() {
+            const cookies = document.cookie.split('; ');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.split('=');
+                if (name === 'totalWordsRead') {
+                    totalWordsRead = parseInt(value, 10) || 0;
+                    document.getElementById("totalWordsRead").textContent = totalWordsRead;
+                    
+                }
+            }
+        }
+
+        // Function to start reading
+        function startReading() {
+            if (interval) return; // Don't start if already running
+            let text = document.getElementById("textInput").value;
+            let speed = parseInt(document.getElementById("speedInput").value, 10);
+
+            if (isNaN(speed) || speed < 50 || speed > 1000) {
+                alert("Please enter a valid speed between 50 and 1000.");
+                return;
+            }
+
+            words = text.split(/\s+/); // Split the input into words
+            index = 0; // Reset the index when starting
+            sessionWordsRead = 0; // Reset the session word count
+            document.getElementById("currentSessionWords").textContent = sessionWordsRead;
+            interval = setInterval(displayWord, 60000 / speed); // Start displaying words at the correct speed
+            document.getElementById("textInput").style.display = "none"; // Hide text input while reading
+            document.getElementById("pauseButton").textContent = "Pause"; // Change button text to "Pause"
+            isPaused = false;
+        }
+
+        // Function to display the current word with adjusted timing for long words
+        function displayWord() {
+            if (index >= words.length) {
+                clearInterval(interval);
+                interval = null;
+                document.getElementById("textInput").style.display = "block"; // Show text input when done
+                document.getElementById("pauseButton").textContent = "Pause"; // Reset button text
+                return;
+            }
+            let word = words[index++];
+            document.getElementById("wordDisplay").textContent = word;
+            sessionWordsRead++;
+            document.getElementById("currentSessionWords").textContent = sessionWordsRead;
+
+            totalWordsRead++;
+            document.getElementById("totalWordsRead").textContent = totalWordsRead;
+            document.getElementById("wordsRemaining").textContent = words.length - index;
+
+            // Save the total words read in a cookie
+            document.cookie = "totalWordsRead=" + totalWordsRead + "; path=/; max-age=" + (60 * 60 * 24 * 365); // Expires in 1 year
+
+            // Adjust display time for long words
+            let wordLength = word.length;
+            let timeToDisplay = 60000 / parseInt(document.getElementById("speedInput").value, 10);
+
+            // If the word is very long, increase the time to display it
+            if (wordLength > 10) {
+                timeToDisplay *= 1.5; // Increase time by 50% for words longer than 10 characters
+            }
+
+            // Update interval based on the word length
+            clearInterval(interval); // Clear existing interval
+            interval = setInterval(displayWord, timeToDisplay);
+        }
+
+        // Toggle between pausing and resuming the reading
+        function togglePause() {
+            if (interval) {
+                // Pause reading
+                clearInterval(interval);
+                interval = null;
+                document.getElementById("pauseButton").textContent = "Resume"; // Change button text to "Resume"
+                document.getElementById("textInput").style.display = "block"; // Show text input
+                isPaused = true;
+            } else if (isPaused) {
+                // Resume reading from the last paused position
+                interval = setInterval(displayWord, 60000 / parseInt(document.getElementById("speedInput").value, 10));
+                document.getElementById("pauseButton").textContent = "Pause"; // Change button text to "Pause"
+                document.getElementById("textInput").style.display = "none"; // Hide text input again
+                isPaused = false;
+            }
+        }
+
+        // Function to reset the reading
+        function resetReading() {
+            clearInterval(interval);
+            interval = null;
+            index = 0;
+            sessionWordsRead = 0;
+            document.getElementById("wordDisplay").textContent = "";
+            document.getElementById("currentSessionWords").textContent = sessionWordsRead;
+            document.getElementById("textInput").value = ""; // Clear the text input
+            document.getElementById("textInput").style.display = "block"; // Show text input again
+            document.getElementById("pauseButton").textContent = "Pause"; // Reset button text
+            isPaused = false;
+        }
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+        }
+
+        // Function to delete already-read text from the input field and save it to localStorage
+        function deleteText() {
+            let currentText = document.getElementById("textInput").value;
+            
+            // Initialize words array if not already done
+            if (words.length === 0) {
+                words = currentText.split(/\s+/);
+            }
+            
+            // If index is 0 or undefined, keep all text
+            if (!index) {
+                return;
+            }
+            
+            let remainingText = words.slice(index).join(" "); // Remaining unread text
+            document.getElementById("textInput").value = remainingText;
+            words = remainingText.split(/\s+/); // Update the words array with remaining text
+            index = 0; // Reset index to start from the first unread word
+        
+            // Save current text to localStorage instead of cookie
+            try {
+                localStorage.setItem('savedText', remainingText);
+                console.log("Text saved to localStorage:", remainingText);
+            } catch (e) {
+                console.error("Error saving to localStorage:", e);
+            }
+        }
+        
+        // Function to load saved text from localStorage
+        function loadSavedText() {
+            try {
+                const savedText = localStorage.getItem('savedText');
+                if (savedText) {
+                    document.getElementById("textInput").value = savedText;
+                    words = savedText.split(/\s+/); // Initialize words array with saved text
+                    console.log("Loaded text from localStorage:", savedText);
+                }
+            } catch (e) {
+                console.error("Error loading from localStorage:", e);
+            }
+        }
+
+        let gracePeriodTimeout = null; // Timeout for grace period
+        let consecutivePresses = 0; // Track consecutive presses
+
+        function goBackSentence() {
+            if (words.length === 0) return; // No words to process
+
+            // Increment consecutive presses and clear any existing timeout
+            consecutivePresses++;
+            if (gracePeriodTimeout) {
+                clearTimeout(gracePeriodTimeout);
+            }
+
+            // Use the current index to calculate the current text
+            let currentText = words.slice(0, index).join(" ");
+            let sentences = currentText.split(/[.!?]+\s*/);
+
+            // Remove empty sentences and handle cleanup
+            sentences = sentences.filter(sent => sent.trim().length > 0);
+
+            if (sentences.length > consecutivePresses) {
+                // Remove the last `consecutivePresses` sentences and rebuild the text
+                let newText = sentences.slice(0, -consecutivePresses).join(". ") + ".";
+
+                // Find the new word index that matches the target position
+                let newIndex = 0;
+                let testText = "";
+                for (let i = 0; i < words.length; i++) {
+                    testText += words[i] + " ";
+                    if (testText.trim().length >= newText.length) {
+                        newIndex = i;
+                        break;
+                    }
+                }
+
+                // Update positions and display
+                index = newIndex;
+
+                // Update display and continue reading if active
+                document.getElementById("wordDisplay").textContent = words[index];
+                document.getElementById("wordsRemaining").textContent = words.length - index;
+
+                if (interval) {
+                    clearInterval(interval);
+                    interval = setInterval(displayWord, 60000 / parseInt(document.getElementById("speedInput").value, 10));
+                }
+            } else {
+                // Reset to the beginning if at the first sentence
+                index = 0;
+                document.getElementById("wordDisplay").textContent = words[0];
+                document.getElementById("wordsRemaining").textContent = words.length;
+            }
+
+            // Start a grace period timer to reset consecutive presses
+            gracePeriodTimeout = setTimeout(() => {
+                consecutivePresses = 0;
+            }, 1000); // Grace period of 1 second
+        }
+
+        // Call this function when the page loads to restore saved text and word counts (if they exist)
+        window.addEventListener("load", function() {
+            loadSavedText();
+            loadWordCounts();
+        });
+
+        // Handle file upload
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const content = e.target.result;
+                if (file.name.endsWith('.txt')) {
+                    document.getElementById("textInput").value = content; // Load the text file content
+                } else if (file.name.endsWith('.docx')) {
+                    // Use the Mammoth library to parse .docx files
+                    readDocx(content);
+                }
+            };
+
+            if (file.name.endsWith('.txt')) {
+                reader.readAsText(file); // Read the text file
+            } else if (file.name.endsWith('.docx')) {
+                reader.readAsArrayBuffer(file); // Read the docx file
+            }
+        }
+
+        // Function to read .docx content using the Mammoth library (if needed)
+        function readDocx(arrayBuffer) {
+            const mammoth = window.mammoth;
+            mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+                .then(function(result) {
+                    document.getElementById("textInput").value = result.value; // Set extracted text from docx
+                })
+                .catch(function(err) {
+                    alert('Error reading DOCX file: ' + err);
+                });
+        }
+
+        // Add spacebar hotkey for pausing and resuming
+        window.addEventListener("keydown", function(event) {
+            if (event.code === "Space") {
+                event.preventDefault(); // Prevent default spacebar behavior (scrolling, etc.)
+                togglePause();
+            }
+        });
+
+        // Replace the existing touch/click event listeners with:
+        const wordDisplay = document.getElementById("wordDisplay");
+
+        // Prevent default touch behavior to avoid delays
+        wordDisplay.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            togglePause();
+        }, { passive: false });
+
+        // Keep click event for desktop devices
+        wordDisplay.addEventListener('click', function(e) {
+            // Only handle click if it's not a touch device
+            if (e.pointerType === undefined) {
+                togglePause();
+            }
+        });
+
+        // Additional touch events for better mobile handling
+        wordDisplay.addEventListener('touchend', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        wordDisplay.addEventListener('touchcancel', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // Function to toggle fullscreen mode
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function startReadingForFiveMinutes() {
+            // Start reading
+            startReading();
+
+            // Disable the "Pause" button
+            const pauseButton = document.getElementById("pauseButton");
+            pauseButton.disabled = true;
+
+            // Enable the "Pause" button after 5 minutes (300,000 milliseconds)
+            setTimeout(() => {
+                pauseButton.disabled = false; // Re-enable the "Pause" button
+            }, 300000); // 5 minutes in milliseconds
+        }
+
+        function startReadingForCustomMinutes() {
+            // Get the custom duration from the input field
+            const customMinutesInput = document.getElementById("customMinutesInput");
+            const customMinutes = parseInt(customMinutesInput.value, 10);
+
+            // Validate the input
+            if (isNaN(customMinutes) || customMinutes < 1 || customMinutes > 60) {
+                alert("Please enter a valid number of minutes between 1 and 60.");
+                return;
+            }
+
+            // Start reading
+            startReading();
+
+            // Disable the "Pause" button
+            const pauseButton = document.getElementById("pauseButton");
+            pauseButton.disabled = true;
+
+            // Enable the "Pause" button after the specified duration
+            setTimeout(() => {
+                pauseButton.disabled = false; // Re-enable the "Pause" button
+            }, customMinutes * 60000); // Convert minutes to milliseconds
+        }
+
+        function saveRemainingText() {
+            let currentText = document.getElementById("textInput").value;
+
+            // Initialize words array if not already done
+            if (words.length === 0) {
+                words = currentText.split(/\s+/);
+            }
+
+            // If index is 0 or undefined, keep all text
+            if (!index) {
+                return;
+            }
+
+            // Get the remaining unread text
+            let remainingText = words.slice(index).join(" ");
+            document.getElementById("textInput").value = remainingText; // Update the text input
+            words = remainingText.split(/\s+/); // Update the words array with remaining text
+            index = 0; // Reset index to start from the first unread word
+
+            // Create a Blob with the remaining text
+            const blob = new Blob([remainingText], { type: "text/plain" });
+
+            // Create a temporary link element to trigger the download
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "remaining_text.txt"; // Set the file name
+            link.click();
+
+            // Clean up the URL object
+            URL.revokeObjectURL(link.href);
+        }
+    </script>
+
+    <!-- Include Mammoth.js for DOCX file reading -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+
+</body>
+</html>
