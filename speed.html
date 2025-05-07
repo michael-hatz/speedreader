@@ -182,6 +182,7 @@
     <script>
         let words = [], index = 0, interval = null, isPaused = false;
         let totalWordsRead = 0, sessionWordsRead = 0;
+        let isTimedReading = false; // Flag to track if timed reading is active
 
         // Load the total words read from the cookie when the page loads
         function loadWordCounts() {
@@ -265,6 +266,11 @@
 
         // Toggle between pausing and resuming the reading
         function togglePause() {
+            if (isTimedReading) {
+                // Prevent pausing during timed reading
+                return;
+            }
+
             if (interval) {
                 // Pause reading
                 clearInterval(interval);
@@ -487,39 +493,35 @@
         }
 
         function startReadingForFiveMinutes() {
-            // Start reading
+            isTimedReading = true; // Enable timed reading
             startReading();
 
-            // Disable the "Pause" button
             const pauseButton = document.getElementById("pauseButton");
-            pauseButton.disabled = true;
+            pauseButton.disabled = true; // Disable the "Pause" button
 
-            // Enable the "Pause" button after 5 minutes (300,000 milliseconds)
             setTimeout(() => {
+                isTimedReading = false; // Disable timed reading after 5 minutes
                 pauseButton.disabled = false; // Re-enable the "Pause" button
             }, 300000); // 5 minutes in milliseconds
         }
 
         function startReadingForCustomMinutes() {
-            // Get the custom duration from the input field
             const customMinutesInput = document.getElementById("customMinutesInput");
             const customMinutes = parseInt(customMinutesInput.value, 10);
 
-            // Validate the input
             if (isNaN(customMinutes) || customMinutes < 1 || customMinutes > 60) {
                 alert("Please enter a valid number of minutes between 1 and 60.");
                 return;
             }
 
-            // Start reading
+            isTimedReading = true; // Enable timed reading
             startReading();
 
-            // Disable the "Pause" button
             const pauseButton = document.getElementById("pauseButton");
-            pauseButton.disabled = true;
+            pauseButton.disabled = true; // Disable the "Pause" button
 
-            // Enable the "Pause" button after the specified duration
             setTimeout(() => {
+                isTimedReading = false; // Disable timed reading after the specified duration
                 pauseButton.disabled = false; // Re-enable the "Pause" button
             }, customMinutes * 60000); // Convert minutes to milliseconds
         }
