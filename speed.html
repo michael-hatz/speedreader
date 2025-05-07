@@ -176,6 +176,7 @@
             <div>Total Words Read: <span id="totalWordsRead">664</span></div>
             <div>Current Session: <span id="currentSessionWords">0</span></div>
             <div>Words Remaining: <span id="wordsRemaining">0</span></div>
+            <div>Time Remaining: <span id="timeRemaining">0h 0m 0s</span></div>
         </div>
     </div>
 
@@ -207,6 +208,19 @@
             document.getElementById("wordsRemaining").textContent = `${wordsRemaining} (${remainingPages} pages)`;
             document.getElementById("totalWordsRead").textContent = `${totalWordsRead} (${readPages} pages)`;
             document.getElementById("currentSessionWords").textContent = `${sessionWordsRead} (${Math.floor(sessionWordsRead / 250)} pages)`;
+
+            // Calculate time remaining
+            const speed = parseInt(document.getElementById("speedInput").value, 10);
+            if (!isNaN(speed) && speed > 0) {
+                const timeInMinutes = wordsRemaining / speed;
+                const hours = Math.floor(timeInMinutes / 60);
+                const minutes = Math.floor(timeInMinutes % 60);
+                const seconds = Math.floor((timeInMinutes * 60) % 60);
+
+                document.getElementById("timeRemaining").textContent = `${hours}h ${minutes}m ${seconds}s`;
+            } else {
+                document.getElementById("timeRemaining").textContent = "N/A";
+            }
         }
 
         // Function to start reading
