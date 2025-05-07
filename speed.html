@@ -196,6 +196,18 @@
             }
         }
 
+        // Function to update the counters, including page count
+        function updateCounters() {
+            const wordsRemaining = words.length - index;
+            const totalPages = Math.ceil(words.length / 250);
+            const remainingPages = Math.ceil(wordsRemaining / 250);
+            const readPages = Math.floor(totalWordsRead / 250);
+
+            document.getElementById("wordsRemaining").textContent = `${wordsRemaining} (${remainingPages} pages)`;
+            document.getElementById("totalWordsRead").textContent = `${totalWordsRead} (${readPages} pages)`;
+            document.getElementById("currentSessionWords").textContent = `${sessionWordsRead} (${Math.floor(sessionWordsRead / 250)} pages)`;
+        }
+
         // Function to start reading
         function startReading() {
             if (interval) return; // Don't start if already running
@@ -229,11 +241,10 @@
             let word = words[index++];
             document.getElementById("wordDisplay").textContent = word;
             sessionWordsRead++;
-            document.getElementById("currentSessionWords").textContent = sessionWordsRead;
-
             totalWordsRead++;
-            document.getElementById("totalWordsRead").textContent = totalWordsRead;
-            document.getElementById("wordsRemaining").textContent = words.length - index;
+
+            // Update counters
+            updateCounters();
 
             // Save the total words read in a cookie
             document.cookie = "totalWordsRead=" + totalWordsRead + "; path=/; max-age=" + (60 * 60 * 24 * 365); // Expires in 1 year
@@ -393,6 +404,7 @@
         window.addEventListener("load", function() {
             loadSavedText();
             loadWordCounts();
+            updateCounters(); // Update counters on page load
         });
 
         // Handle file upload
