@@ -152,6 +152,7 @@
             <button onclick="startReading()">Start</button>
             <button id="pauseButton" onclick="togglePause()">Pause</button>
             <button onclick="goBackSentence()">&lt;&lt;</button>
+            <button onclick="goForwardToSeparator()">&gt;&gt;</button>
             <button onclick="resetReading()">Reset</button>
             <button onclick="toggleDarkMode()">Dark Mode</button>
             <button onclick="deleteText()">Save</button>
@@ -598,6 +599,115 @@
 
             // Clean up the URL object
             URL.revokeObjectURL(link.href);
+        }
+
+        let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
+
+        // Detect swipe gestures
+        function handleTouchStart(event) {
+            const touch = event.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
+
+        function handleTouchMove(event) {
+            const touch = event.touches[0];
+            touchEndX = touch.clientX;
+            touchEndY = touch.clientY;
+        }
+
+        function handleTouchEnd() {
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+
+            // Check if the swipe is primarily vertical
+            if (Math.abs(deltaY) > Math.abs(deltaX)) {
+                if (touchStartX < window.innerWidth / 2) {
+                    // Left side of the screen: Adjust WPM
+                    if (deltaY < 0) {
+                        increaseSpeed(); // Swipe up
+                    } else {
+                        decreaseSpeed(); // Swipe down
+                    }
+                } else {
+                    // Right side of the screen: Adjust font size
+                    if (deltaY < 0) {
+                        increaseFontSize(); // Swipe up
+                    } else {
+                        decreaseFontSize(); // Swipe down
+                    }
+                }
+            }
+        }
+
+        // Attach touch event listeners to the body
+        document.body.addEventListener('touchstart', handleTouchStart, { passive: false });
+        document.body.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.body.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+        function increaseSpeed() {
+            const speedInput = document.getElementById("speedInput");
+            let currentSpeed = parseInt(speedInput.value, 10);
+            if (currentSpeed < 1000) {
+                currentSpeed += 10; // Increase speed by 10 WPM
+                speedInput.value = currentSpeed;
+                updateCounters(); // Update counters to reflect the new speed
+            }
+        }
+
+        function decreaseSpeed() {
+            const speedInput = document.getElementById("speedInput");
+            let currentSpeed = parseInt(speedInput.value, 10);
+            if (currentSpeed > 50) {
+                currentSpeed -= 10; // Decrease speed by 10 WPM
+                speedInput.value = currentSpeed;
+                updateCounters(); // Update counters to reflect the new speed
+            }
+        }
+
+        function increaseFontSize() {
+            const wordDisplay = document.getElementById("wordDisplay");
+            const currentFontSize = parseFloat(window.getComputedStyle(wordDisplay).fontSize);
+            wordDisplay.style.fontSize = `${currentFontSize + 2}px`; // Increase font size by 2px
+        }
+
+        function decreaseFontSize() {
+            const wordDisplay = document.getElementById("wordDisplay");
+            const currentFontSize = parseFloat(window.getComputedStyle(wordDisplay).fontSize);
+            if (currentFontSize > 10) {
+                wordDisplay.style.fontSize = `${currentFontSize - 2}px`; // Decrease font size by 2px
+            }
+        }
+
+        function goForwardToSeparator() {
+            if (words.length === 0 || index >= words.length) return; // No words to process or already at the end
+
+            // Join the remaining words into a single string
+            const remainingText = words.slice(index).join(" ");
+
+            // Find the position of the next occurrence of the separator
+            const separatorIndex = remainingText.indexOf("====================");
+
+            if (separatorIndex !== -1) {
+                // Calculate the new word index based on the separator's position
+                const newTextBeforeSeparator = remainingText.slice(0, separatorIndex);
+                const newWordCount = newTextBeforeSeparator.split(/\s+/).length;
+
+                // Update the index to skip to the separator
+                index += newWordCount;
+
+                // Update the display and counters
+                document.getElementById("wordDisplay").textContent = words[index];
+                updateCounters();
+
+                // Resume reading if it was active
+                if (interval) {
+                    clearInterval(interval);
+                    interval = setInterval(displayWord, 60000 / parseInt(document.getElementById("speedInput").value, 10));
+                }
+            } else {
+                alert("Separator '====================' not found in the remaining text.");
+            }
         }
     </script>
 
