@@ -239,7 +239,16 @@
             sessionWordsRead = 0; // Reset the session word count
             document.getElementById("currentSessionWords").textContent = sessionWordsRead;
             interval = setInterval(displayWord, 60000 / speed); // Start displaying words at the correct speed
-            document.getElementById("textInput").style.display = "none"; // Hide text input while reading
+
+            // Hide elements during reading
+            document.getElementById("textInput").style.display = "none";
+            document.querySelector("button[onclick='startReadingForFiveMinutes()']").style.display = "none";
+            document.querySelector("button[onclick='startReadingForCustomMinutes()']").style.display = "none";
+            document.querySelector("button[onclick='saveRemainingText()']").style.display = "none";
+            document.getElementById("speedInput").parentElement.style.display = "none"; // Hide Speed (WPM) label and input
+            document.getElementById("fileInput").style.display = "none"; // Hide file upload
+            document.getElementById("customMinutesInput").parentElement.style.display = "none"; // Hide Custom Minutes label and input
+
             document.getElementById("pauseButton").textContent = "Pause"; // Change button text to "Pause"
             isPaused = false;
         }
@@ -291,12 +300,24 @@
                 interval = null;
                 document.getElementById("pauseButton").textContent = "Resume"; // Change button text to "Resume"
                 document.getElementById("textInput").style.display = "block"; // Show text input
+                document.querySelector("button[onclick='startReadingForFiveMinutes()']").style.display = "inline-block";
+                document.querySelector("button[onclick='startReadingForCustomMinutes()']").style.display = "inline-block";
+                document.querySelector("button[onclick='saveRemainingText()']").style.display = "inline-block";
+                document.getElementById("speedInput").parentElement.style.display = "inline-block"; // Show Speed (WPM) label and input
+                document.getElementById("fileInput").style.display = "inline-block"; // Show file upload
+                document.getElementById("customMinutesInput").parentElement.style.display = "inline-block"; // Show Custom Minutes label and input
                 isPaused = true;
             } else if (isPaused) {
                 // Resume reading from the last paused position
                 interval = setInterval(displayWord, 60000 / parseInt(document.getElementById("speedInput").value, 10));
                 document.getElementById("pauseButton").textContent = "Pause"; // Change button text to "Pause"
                 document.getElementById("textInput").style.display = "none"; // Hide text input again
+                document.querySelector("button[onclick='startReadingForFiveMinutes()']").style.display = "none";
+                document.querySelector("button[onclick='startReadingForCustomMinutes()']").style.display = "none";
+                document.querySelector("button[onclick='saveRemainingText()']").style.display = "none";
+                document.getElementById("speedInput").parentElement.style.display = "none"; // Hide Speed (WPM) label and input
+                document.getElementById("fileInput").style.display = "none"; // Hide file upload
+                document.getElementById("customMinutesInput").parentElement.style.display = "none"; // Hide Custom Minutes label and input
                 isPaused = false;
             }
         }
@@ -311,6 +332,13 @@
             document.getElementById("currentSessionWords").textContent = sessionWordsRead;
             document.getElementById("textInput").value = ""; // Clear the text input
             document.getElementById("textInput").style.display = "block"; // Show text input again
+
+            // Show hidden elements
+            document.querySelector("button[onclick='startReadingForFiveMinutes()']").style.display = "inline-block";
+            document.querySelector("button[onclick='startReadingForCustomMinutes()']").style.display = "inline-block";
+            document.querySelector("button[onclick='saveRemainingText()']").style.display = "inline-block";
+            document.getElementById("speedInput").style.display = "inline-block";
+
             document.getElementById("pauseButton").textContent = "Pause"; // Reset button text
             isPaused = false;
         }
