@@ -13,7 +13,7 @@
             font-family: 'Atkinson Hyperlegible';
             font-style: normal;
             font-weight: 400;
-            src: url('AtkinsonHyperlegible-Regular.ttf') format('truetype');
+            src: url('https://erdx.de/AtkinsonHyperlegible-Regular.ttf') format('truetype');
         }
         body {
             font-family: 'Atkinson Hyperlegible', sans-serif;
@@ -138,29 +138,6 @@
                 width: 100%; 
             }
         }
-        .file-management ul {
-            list-style: none;
-            padding: 0;
-        }
-        .file-management li {
-            display: flex;
-            align-items: center;
-            margin-bottom: 6px;
-            font-size: 1rem;
-        }
-        .file-management li button {
-            margin-left: 10px;
-            padding: 4px 10px;
-            font-size: 0.9em;
-            background: #dc3545;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .file-management li button:hover {
-            background: #a71d2a;
-        }
     </style>
 </head>
 <body>
@@ -188,7 +165,7 @@
                                 <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
                             </svg>
                         </button>
-            <label>Speed (WPM): <input type="number" id="speedInput" value="420" min="50" max="1000"></label>
+            <label>Speed (WPM): <input type="number" id="speedInput" value="300" min="50" max="1000"></label>
             <input type="file" id="fileInput" accept=".txt,.docx" onchange="handleFileUpload(event)">
             <button onclick="startReadingForFiveMinutes()">Read for 5 Minutes</button>
             <label>Custom Minutes: <input type="number" id="customMinutesInput" value="5" min="1" max="60"></label>
@@ -202,21 +179,12 @@
             <div>Words Remaining: <span id="wordsRemaining">0</span></div>
             <div>Time Remaining: <span id="timeRemaining">0h 0m 0s</span></div>
         </div>
-
-        <!-- File upload and management section -->
-        <div class="file-management">
-            <h3>File Management</h3>
-            <input type="file" id="fileUpload" accept=".txt,.docx" onchange="uploadFile(event)">
-            <ul id="fileList"></ul>
-        </div>
     </div>
 
     <script>
         let words = [], index = 0, interval = null, isPaused = false;
         let totalWordsRead = 0, sessionWordsRead = 0;
         let isTimedReading = false; // Flag to track if timed reading is active
-        let currentFilename = null;
-        let wakeLock = null;
 
         // Load the total words read from the cookie when the page loads
         function loadWordCounts() {
@@ -281,12 +249,9 @@
             document.getElementById("speedInput").parentElement.style.display = "none"; // Hide Speed (WPM) label and input
             document.getElementById("fileInput").style.display = "none"; // Hide file upload
             document.getElementById("customMinutesInput").parentElement.style.display = "none"; // Hide Custom Minutes label and input
-            document.querySelector('.file-management').style.display = "none"; // Hide file management section
 
             document.getElementById("pauseButton").textContent = "Pause"; // Change button text to "Pause"
             isPaused = false;
-
-            requestWakeLock();
         }
 
         // Function to display the current word with adjusted timing for long words
@@ -294,8 +259,8 @@
             if (index >= words.length) {
                 clearInterval(interval);
                 interval = null;
-                document.getElementById("textInput").style.display = "block";
-                document.getElementById("pauseButton").textContent = "Pause";
+                document.getElementById("textInput").style.display = "block"; // Show text input when done
+                document.getElementById("pauseButton").textContent = "Pause"; // Reset button text
                 return;
             }
             let word = words[index++];
@@ -303,27 +268,23 @@
             sessionWordsRead++;
             totalWordsRead++;
 
+            // Update counters
             updateCounters();
 
-            document.cookie = "totalWordsRead=" + totalWordsRead + "; path=/; max-age=" + (60 * 60 * 24 * 365);
+            // Save the total words read in a cookie
+            document.cookie = "totalWordsRead=" + totalWordsRead + "; path=/; max-age=" + (60 * 60 * 24 * 365); // Expires in 1 year
 
-            // Save total words read to server every 500 words
-            if (totalWordsRead % 500 === 0) {
-                saveTotalWordsRead(totalWordsRead);
-            }
-
-            // Save progress to server
-            // if (currentFilename) {
-            //    const remainingText = words.slice(index).join(" ");
-            //    saveProgress(currentFilename, index, remainingText);
-            // }
-
+            // Adjust display time for long words
             let wordLength = word.length;
             let timeToDisplay = 60000 / parseInt(document.getElementById("speedInput").value, 10);
+
+            // If the word is very long, increase the time to display it
             if (wordLength > 10) {
-                timeToDisplay *= 1.5;
+                timeToDisplay *= 1.5; // Increase time by 50% for words longer than 10 characters
             }
-            clearInterval(interval);
+
+            // Update interval based on the word length
+            clearInterval(interval); // Clear existing interval
             interval = setInterval(displayWord, timeToDisplay);
         }
 
@@ -346,8 +307,6 @@
                 document.getElementById("speedInput").parentElement.style.display = "inline-block"; // Show Speed (WPM) label and input
                 document.getElementById("fileInput").style.display = "inline-block"; // Show file upload
                 document.getElementById("customMinutesInput").parentElement.style.display = "inline-block"; // Show Custom Minutes label and input
-                document.querySelector('.file-management').style.display = "block"; // <-- Show on pause
-                releaseWakeLock();
                 isPaused = true;
             } else if (isPaused) {
                 // Resume reading from the last paused position
@@ -360,8 +319,6 @@
                 document.getElementById("speedInput").parentElement.style.display = "none"; // Hide Speed (WPM) label and input
                 document.getElementById("fileInput").style.display = "none"; // Hide file upload
                 document.getElementById("customMinutesInput").parentElement.style.display = "none"; // Hide Custom Minutes label and input
-                document.querySelector('.file-management').style.display = "none"; // <-- Hide on resume
-                requestWakeLock();
                 isPaused = false;
             }
         }
@@ -382,12 +339,9 @@
             document.querySelector("button[onclick='startReadingForCustomMinutes()']").style.display = "inline-block";
             document.querySelector("button[onclick='saveRemainingText()']").style.display = "inline-block";
             document.getElementById("speedInput").style.display = "inline-block";
-            document.querySelector('.file-management').style.display = "block"; // Show file management section
 
             document.getElementById("pauseButton").textContent = "Pause"; // Reset button text
             isPaused = false;
-
-            releaseWakeLock();
         }
 
         // Toggle dark mode
@@ -398,25 +352,28 @@
         // Function to delete already-read text from the input field and save it to localStorage
         function deleteText() {
             let currentText = document.getElementById("textInput").value;
-
+            
             // Initialize words array if not already done
             if (words.length === 0) {
-                words = currentText.trim().split(/\s+/).filter(Boolean);
+                words = currentText.split(/\s+/);
             }
-
+            
             // If index is 0 or undefined, keep all text
             if (!index) {
                 return;
             }
-
+            
             let remainingText = words.slice(index).join(" "); // Remaining unread text
             document.getElementById("textInput").value = remainingText;
-            words = remainingText.trim().split(/\s+/).filter(Boolean); // Update the words array with remaining text
+            words = remainingText.split(/\s+/); // Update the words array with remaining text
             index = 0; // Reset index to start from the first unread word
-
-            // Save progress and remaining text to server
-            if (currentFilename) {
-                saveProgress(currentFilename, index, remainingText);
+        
+            // Save current text to localStorage instead of cookie
+            try {
+                localStorage.setItem('savedText', remainingText);
+                console.log("Text saved to localStorage:", remainingText);
+            } catch (e) {
+                console.error("Error saving to localStorage:", e);
             }
         }
         
@@ -497,8 +454,6 @@
             loadSavedText();
             loadWordCounts();
             updateCounters(); // Update counters on page load
-            loadFileList();   // <-- Add this line to show all uploaded files on page load
-            loadTotalWordsRead(); // Load total words read from the server
         });
 
         // Handle file upload
@@ -616,22 +571,34 @@
 
         function saveRemainingText() {
             let currentText = document.getElementById("textInput").value;
+
+            // Initialize words array if not already done
             if (words.length === 0) {
                 words = currentText.split(/\s+/);
             }
+
+            // If index is 0 or undefined, keep all text
             if (!index) {
                 return;
             }
-            let remainingText = words.slice(index).join(" ");
-            document.getElementById("textInput").value = remainingText;
-            words = remainingText.split(/\s+/);
-            index = 0;
 
-            // Save cut file to server
-            if (currentFilename) {
-                cutFile(currentFilename, remainingText);
-                saveProgress(currentFilename, index, remainingText); // <-- Add this line
-            }
+            // Get the remaining unread text
+            let remainingText = words.slice(index).join(" ");
+            document.getElementById("textInput").value = remainingText; // Update the text input
+            words = remainingText.split(/\s+/); // Update the words array with remaining text
+            index = 0; // Reset index to start from the first unread word
+
+            // Create a Blob with the remaining text
+            const blob = new Blob([remainingText], { type: "text/plain" });
+
+            // Create a temporary link element to trigger the download
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "remaining_text.txt"; // Set the file name
+            link.click();
+
+            // Clean up the URL object
+            URL.revokeObjectURL(link.href);
         }
 
         let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
@@ -742,141 +709,11 @@
                 alert("Separator '====================' not found in the remaining text.");
             }
         }
-
-        // Upload file
-        function uploadFile(event) {
-    const file = event.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-    fetch('upload.php', { method: 'POST', body: formData })
-        .then(() => loadFileList());
-}
-
-// List files
-function loadFileList() {
-    fetch('list.php')
-        .then(res => res.json())
-        .then(files => {
-            const ul = document.getElementById('fileList');
-            ul.innerHTML = '';
-            files.forEach(file => {
-                const li = document.createElement('li');
-                li.textContent = file;
-                li.onclick = () => loadFile(file);
-                const delBtn = document.createElement('button');
-                delBtn.textContent = 'Delete';
-                delBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    deleteFile(file);
-                };
-                li.appendChild(delBtn);
-                ul.appendChild(li);
-            });
-        });
-}
-
-// Load file content
-function loadFile(filename) {
-    currentFilename = filename;
-    fetch('get_progress.php?file=' + encodeURIComponent(filename))
-        .then(res => res.json())
-        .then(data => {
-            let text = data.remaining_text;
-            if (!text) {
-                // If no progress or remaining_text, load the original file content
-                fetch('get.php?file=' + encodeURIComponent(filename))
-                    .then(res => res.text())
-                    .then(fileText => {
-                        document.getElementById('textInput').value = fileText;
-                        words = fileText.trim().split(/\s+/).filter(Boolean);
-                        index = 0;
-                        document.getElementById("wordDisplay").textContent = words[index] || "";
-                        updateCounters();
-                    });
-            } else {
-                document.getElementById('textInput').value = text;
-                words = text.trim().split(/\s+/).filter(Boolean);
-                index = 0;
-                if (data.words_read !== undefined) {
-                    index = Number(data.words_read);
-                    if (index >= words.length) index = 0;
-                }
-                document.getElementById("wordDisplay").textContent = words[index] || "";
-                updateCounters();
-            }
-        });
-}
-
-// Delete file
-function deleteFile(filename) {
-    fetch('delete.php', {
-        method: 'POST',
-        body: new URLSearchParams({ file: filename })
-    }).then(() => loadFileList());
-}
-
-// Save progress
-function saveProgress(filename, wordsRead, remainingText) {
-    fetch('save_progress.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `file=${encodeURIComponent(filename)}&progress=${encodeURIComponent(wordsRead)}&remaining_text=${encodeURIComponent(remainingText)}`
-    });
-}
-
-// Cut file (save remaining text)
-function cutFile(filename, remainingText) {
-    fetch('cut.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `file=${encodeURIComponent(filename)}&text=${encodeURIComponent(remainingText)}`
-    });
-}
-
-function saveTotalWordsRead(totalWordsRead) {
-    fetch('save_total_words.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `total=${encodeURIComponent(totalWordsRead)}`
-    });
-}
-
-// Load total words read from the server
-function loadTotalWordsRead() {
-    fetch('get_total_words.php')
-        .then(res => res.json())
-        .then(data => {
-            totalWordsRead = data.total_words_read || 0;
-            document.getElementById("totalWordsRead").textContent = totalWordsRead;
-        });
-}
-
-async function requestWakeLock() {
-    try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-        }
-    } catch (err) {
-        console.error(`${err.name}, ${err.message}`);
-    }
-}
-
-function releaseWakeLock() {
-    if (wakeLock !== null) {
-        wakeLock.release();
-        wakeLock = null;
-    }
-}
-
-// Re-acquire wake lock on visibility change (tab switch, screen off/on)
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && interval) {
-        requestWakeLock();
-    }
-});
-
-document.getElementById("wordDisplay").onclick = togglePause;
     </script>
-    <script src="https://erdx.de/mammoth.browser.min.js"></script>
+
     <!-- Include Mammoth.js for DOCX file reading -->
-</body></html>
+    <script src="https://erdx.de/mammoth.browser.min.js"></script>
+
+
+</body>
+</html>
